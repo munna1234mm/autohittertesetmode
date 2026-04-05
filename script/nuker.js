@@ -25,24 +25,36 @@
                 const sub = findElements(node.shadowRoot);
                 if (sub.bin) results.bin = sub.bin;
                 if (sub.start) results.start = sub.start;
+                if (sub.result) results.result = sub.result;
             }
             
-            const txt = (node.innerText || node.textContent || "").trim().toLowerCase();
+            const txt = (node.innerText || node.textContent || "").trim();
+            const lowerTxt = txt.toLowerCase();
             const val = (node.value || "").toString().toLowerCase();
             const placeholder = (node.getAttribute("placeholder") || "").toLowerCase();
             
-            // 1. Detect BIN Input (Large Numeric Target)
+            // 1. Detect BIN Input
             if (node.tagName === "INPUT" || node.tagName === "TEXTAREA") {
                 if (placeholder.includes("bin") || placeholder.includes("enter") || node.id.includes("bin")) {
                     results.bin = node;
-                } else if (!results.bin && node.offsetHeight > 30 && node.offsetWidth > 100) {
-                    results.bin = node; // Fallback to first prominent input
                 }
             }
             
             // 2. Detect START Button
-            if (txt === "start" || val === "start" || node.getAttribute("aria-label") === "Start" || (txt.includes("start") && txt.length < 15)) {
+            if (lowerTxt === "start" || val === "start" || (lowerTxt.includes("start") && lowerTxt.length < 15)) {
                 if (node.offsetWidth > 0) results.start = node;
+            }
+
+            // 3. Detect Result Popups (like "do_not_honor", "success", "insufficient_funds")
+            if (txt.includes("_") || txt.includes(" ") || txt.length > 3) {
+                if (node.offsetWidth > 0 && node.offsetParent !== null) {
+                    const style = window.getComputedStyle(node);
+                    if (style.position === "fixed" || style.zIndex > 1000 || node.className.includes("notification") || node.className.includes("alert")) {
+                        if (!results.result || txt.length < results.result.length) {
+                             results.result = txt; // Smaller text is usually the error code
+                        }
+                    }
+                }
             }
         }
         return results;
@@ -62,30 +74,32 @@
             return;
         }
 
-        // 2. Failure Detector (No reload)
+        // 2. Failure/Result Detector (No reload)
         const errorEl = document.querySelector(".FieldError, .Error, [role='alert'], .messaging-message, .p-Icon--error");
-        if (errorEl && errorEl.offsetParent !== null && !window._hitTriggeredForThisTry) {
-            const errText = errorEl.innerText.toLowerCase();
-            const failKeys = ["decline", "invalid", "expired", "check", "try again", "error", "failure"];
-            if (failKeys.some(k => errText.includes(k)) && !errText.includes("required")) {
+        const ui = findElements(document);
+        const result = ui.result || (errorEl && errorEl.offsetParent !== null ? errorEl.innerText : null);
+
+        if (result && !window._hitTriggeredForThisTry) {
+            const lowerRes = result.toLowerCase();
+            const failKeys = ["decline", "invalid", "expired", "check", "try again", "error", "failure", "honor", "funds"];
+            if (failKeys.some(k => lowerRes.includes(k)) && !lowerRes.includes("required")) {
                 if (!window._failureReported) {
                     window._failureReported = true;
-                    report("Hit Failed: " + errorEl.innerText, "error");
+                    report("Hit Result [" + (data.maTries) + "]: " + result, "error");
                     
                     // Check if we should retry
                     if (data.maCount - data.maTries > 0) {
-                        report("Retrying sequentially in 8s... (No Reload)", "success");
+                        report("Sequential retry in 8s... (No Reload)", "success");
                         setTimeout(() => {
-                            window._hitTriggeredForThisTry = false; // Reset for next attempt
+                            window._hitTriggeredForThisTry = false; // Reset
                             window._failureReported = false;
-                            console.log("[Auto Hitter] Resetting for sequential attempt...");
                         }, 8000);
                     } else {
-                        report("Max retries reached. Stopping.", "error");
+                        report("Finished all " + data.maCount + " tries.", "error");
                         chrome.storage.local.set({ maActive: false });
                     }
                 }
-                return; // Wait for reset
+                return;
             }
         }
 

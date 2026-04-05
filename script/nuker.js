@@ -72,13 +72,13 @@
             setTimeout(() => {
                 simulateClick(ui.start);
                 console.log("[Auto Hitter] FORCED START Pulsed.");
-            }, 1000);
+            }, 3000);
         }
     };
 
     // Extreme polling
     setInterval(runController, 1500);
-    setTimeout(runController, 1000);
+    setTimeout(runController, 3000);
     
     console.log("[Auto Hitter] Controller Active in Frame: " + window.location.hostname);
 })();

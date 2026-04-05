@@ -6,7 +6,7 @@
     const hitForm = document.getElementById('hitForm');
     const startBtn = document.getElementById('startBtn');
     const statusDot = document.getElementById('statusDot');
-    const API_URL = 'http://localhost:5000';
+    const API_URL = 'https://autohittertesetmode.onrender.com';
 
     const addLog = (text, type = '') => {
         const entry = document.createElement('div');

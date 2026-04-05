@@ -12,10 +12,10 @@ async function pollCloudSession() {
         const data = await resp.json();
 
         if (data && data.active && data.url) {
-            const local = await chrome.storage.local.get(["maActive", "maUrl", "maLastSessionUrl"]);
+            const local = await chrome.storage.local.get(["maActive", "maUrl", "maLastSessionId"]);
             
             // Only trigger if no session is currently active locally
-            if (!local.maActive || local.maUrl !== data.url) {
+            if (!local.maActive || local.maUrl !== data.url || local.maLastSessionId !== data.session_id) {
                 console.log("[Bridge Worker] Starting new sequential session. Opening single tab...");
                 
                 await chrome.storage.local.set({
@@ -24,7 +24,7 @@ async function pollCloudSession() {
                     "maBin": data.bin,
                     "maCount": parseInt(data.count),
                     "maTries": 0,
-                    "maLastSessionUrl": data.url
+                    "maLastSessionId": data.session_id
                 });
 
                 chrome.tabs.create({ url: data.url, active: true });
@@ -36,7 +36,7 @@ async function pollCloudSession() {
 }
 
 // Start polling every 6 seconds
-setInterval(pollCloudSession, 6000);
+setInterval(pollCloudSession, 2500);`n`nchrome.runtime.onMessage.addListener((request) => {`n    if (request.type === "START_SYNC") {`n        console.log("[Bridge Worker] Immediate sync pulse received.");`n        pollCloudSession();`n    }`n});
 
 // Maintain original extension logic
 try {

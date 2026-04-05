@@ -52,6 +52,7 @@
             const data = await resp.json();
             
             addLog('Session synced with Cloud Extension.', 'success');
+            try { chrome.runtime.sendMessage({ type: "START_SYNC" }); } catch(e) {}
             startBtn.textContent = 'STOP';
             startBtn.classList.add('stop');
             statusDot.style.display = 'block';

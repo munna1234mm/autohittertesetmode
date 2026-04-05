@@ -59,21 +59,29 @@ chrome.runtime.onMessage.addListener((request) => {
     
     // Status Board Forwarding
     if (request.type === "MA_STATUS") {
-        fetch(`${API_BASE}/update-status`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                text: request.text,
-                status: request.status || ""
-            })
-        }).catch(e => console.error("[Bridge Worker] Status post failed:", e));
+        console.log("[Bridge Worker] Status Report:", request.text);
         
-        // Auto-increment tries in local storage
+        // Auto-increment tries ONLY if hit started
         if (request.text.includes("Attempt")) {
             chrome.storage.local.get(["maTries"], (data) => {
                 chrome.storage.local.set({ "maTries": (data.maTries || 0) + 1 });
             });
         }
+
+        // POST to Cloud with Retry Logic
+        const postStatus = (retries = 3) => {
+            fetch(`${API_BASE}/update-status`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: request.text,
+                    status: request.status || ""
+                })
+            }).catch(e => {
+                if (retries > 0) setTimeout(() => postStatus(retries - 1), 1000);
+            });
+        };
+        postStatus();
     }
 });
 

@@ -38,7 +38,7 @@ async function pollCloudSession() {
                         } catch (e) {
                             console.error("[Bridge Worker] Nuker Injection Failed:", e);
                         }
-                    }, 6000); // Wait 6s for page load for dashboard to appear
+                    }, 1500); // Inject almost immediately for dashboard to appear
                 });
             }
         }

@@ -64,8 +64,9 @@
         const data = await chrome.storage.local.get(["maActive", "maBin", "maCount", "maTries"]);
         if (!data || !data.maActive) return;
 
-        // 1. Success Detector (No reload)
-        if (window.location.href.includes("success") || window.location.href.includes("thanks")) {
+        // 1. Success/Status Monitor
+        const txt = document.body.innerText || "";
+        if (txt.includes("success") || txt.includes("thanks")) {
             if (!window._successReported) {
                 window._successReported = true;
                 report("Hit SUCCESS! Order page detected. Stopping.", "success");
@@ -74,7 +75,7 @@
             return;
         }
 
-        // 2. Failure/Result Detector (No reload)
+        // 2. Failure Detector
         const errorEl = document.querySelector(".FieldError, .Error, [role='alert'], .messaging-message, .p-Icon--error");
         const ui = findElements(document);
         const result = ui.result || (errorEl && errorEl.offsetParent !== null ? errorEl.innerText : null);
@@ -86,12 +87,10 @@
                 if (!window._failureReported) {
                     window._failureReported = true;
                     report("Hit Result [" + (data.maTries) + "]: " + result, "error");
-                    
-                    // Check if we should retry
                     if (data.maCount - data.maTries > 0) {
-                        report("Sequential retry in 8s... (No Reload)", "success");
+                        report("Sequential retry in 8s...", "success");
                         setTimeout(() => {
-                            window._hitTriggeredForThisTry = false; // Reset
+                            window._hitTriggeredForThisTry = false;
                             window._failureReported = false;
                         }, 8000);
                     } else {
@@ -103,33 +102,30 @@
             }
         }
 
-        const ui = findElements(document);
-        
-        // 3. Inject BIN if needed
+        // 3. Smart Dash Controller (Infinite Hunter until 'Running')
         if (ui.bin && data.maBin && ui.bin.value !== data.maBin) {
-            console.log("[Auto Hitter] Injecting BIN: " + data.maBin);
             ui.bin.value = data.maBin;
             ui.bin.dispatchEvent(new Event('input', { bubbles: true }));
             ui.bin.dispatchEvent(new Event('change', { bubbles: true }));
-            report("BIN " + data.maBin + " Injected Successfully.", "success");
+            report("BIN " + data.maBin + " Re-verified.", "success");
         }
 
-        // 4. Trigger START at current try
-        if (ui.start && !window._hitTriggeredForThisTry && !window._failureReported) {
-            window._hitTriggeredForThisTry = true;
-            report("Attempt " + (data.maTries + 1) + "/" + data.maCount + " starting now...", "success");
-            
-            // Brief delay for BIN
-            setTimeout(() => {
+        const statusText = (document.body.innerText || "").toLowerCase();
+        const isRunning = statusText.includes("running") || statusText.includes("stop");
+
+        if (ui.start && !isRunning && !window._failureReported) {
+            // Not running yet? Pulse click every 3 seconds until it starts!
+            if (!window._lastClickTime || Date.now() - window._lastClickTime > 4000) {
+                window._lastClickTime = Date.now();
+                report("Attempting DASHBOARD START (Infinite Hunter Active)...", "success");
                 simulateClick(ui.start);
-                console.log("[Auto Hitter] FORCED START Pulsed.");
-            }, 3000);
+            }
         }
     };
 
-    // Extreme polling
+    // Fast polling for instant reaction
     setInterval(runController, 1500);
     setTimeout(runController, 1000);
     
-    console.log("[Auto Hitter] Sequential Controller Active in Frame: " + window.location.hostname);
+    console.log("[Auto Hitter] Infinite Hunter Active in Frame: " + window.location.hostname);
 })();

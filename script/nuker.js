@@ -60,16 +60,39 @@
         return results;
     };
 
+    const showOnPageLog = (text, status = "") => {
+        let board = document.getElementById("ah-onpage-board");
+        if (!board) {
+            board = document.createElement("div");
+            board.id = "ah-onpage-board";
+            board.style = "position:fixed;bottom:20px;left:20px;width:320px;max-height:180px;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:12px;padding:10px;border:1px solid #333;border-radius:8px;z-index:999999;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,0.5);";
+            board.innerHTML = "<div style='color:#fff;border-bottom:1px solid #333;margin-bottom:5px;padding-bottom:5px;font-weight:bold;display:flex;justify-content:space-between;'><span>AUTO HITTER LIVE LOGS</span><span style='color:#0f0;'>●</span></div><div id='ah-logs-container'></div>";
+            document.body.appendChild(board);
+        }
+        const container = document.getElementById("ah-logs-container");
+        const entry = document.createElement("div");
+        entry.style = "margin-bottom:3px; border-left: 2px solid " + (status === "error" ? "#f00" : "#0f0") + "; padding-left: 5px;";
+        entry.textContent = `> ${text}`;
+        container.appendChild(entry);
+        board.scrollTop = board.scrollHeight;
+    };
+
     const runController = async () => {
         const data = await chrome.storage.local.get(["maActive", "maBin", "maCount", "maTries"]);
-        if (!data || !data.maActive) return;
+        if (!data || !data.maActive) {
+            const b = document.getElementById("ah-onpage-board");
+            if (b) b.remove();
+            return;
+        }
 
         // 1. Success/Status Monitor
         const txt = document.body.innerText || "";
         if (txt.includes("success") || txt.includes("thanks")) {
             if (!window._successReported) {
                 window._successReported = true;
-                report("Hit SUCCESS! Order page detected. Stopping.", "success");
+                const msg = "Hit SUCCESS! Order page detected. Stopping.";
+                report(msg, "success");
+                showOnPageLog(msg, "success");
                 chrome.storage.local.set({ maActive: false });
             }
             return;
@@ -86,15 +109,22 @@
             if (failKeys.some(k => lowerRes.includes(k)) && !lowerRes.includes("required")) {
                 if (!window._failureReported) {
                     window._failureReported = true;
-                    report("Hit Result [" + (data.maTries) + "]: " + result, "error");
+                    const msg = "Hit Result [" + (data.maTries) + "]: " + result;
+                    report(msg, "error");
+                    showOnPageLog(msg, "error");
+                    
                     if (data.maCount - data.maTries > 0) {
-                        report("Sequential retry in 8s...", "success");
+                        const rMsg = "Sequential retry in 8s...";
+                        report(rMsg, "success");
+                        showOnPageLog(rMsg, "success");
                         setTimeout(() => {
                             window._hitTriggeredForThisTry = false;
                             window._failureReported = false;
                         }, 8000);
                     } else {
-                        report("Finished all " + data.maCount + " tries.", "error");
+                        const fMsg = "Finished all " + data.maCount + " tries.";
+                        report(fMsg, "error");
+                        showOnPageLog(fMsg, "error");
                         chrome.storage.local.set({ maActive: false });
                     }
                 }
@@ -107,17 +137,20 @@
             ui.bin.value = data.maBin;
             ui.bin.dispatchEvent(new Event('input', { bubbles: true }));
             ui.bin.dispatchEvent(new Event('change', { bubbles: true }));
-            report("BIN " + data.maBin + " Re-verified.", "success");
+            const bMsg = "BIN " + data.maBin + " Re-verified.";
+            report(bMsg, "success");
+            showOnPageLog(bMsg, "success");
         }
 
         const statusText = (document.body.innerText || "").toLowerCase();
         const isRunning = statusText.includes("running") || statusText.includes("stop");
 
         if (ui.start && !isRunning && !window._failureReported) {
-            // Not running yet? Pulse click every 3 seconds until it starts!
             if (!window._lastClickTime || Date.now() - window._lastClickTime > 4000) {
                 window._lastClickTime = Date.now();
-                report("Attempting DASHBOARD START (Infinite Hunter Active)...", "success");
+                const pMsg = "Attempting DASHBOARD START (Infinite Hunter Pulse)...";
+                report(pMsg, "success");
+                showOnPageLog(pMsg, "success");
                 simulateClick(ui.start);
             }
         }

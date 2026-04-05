@@ -50,6 +50,19 @@ async function pollCloudSession() {
 // Background polling - 2.5 seconds
 setInterval(pollCloudSession, 2500);
 
+// Window Watchdog (Prevent Minimize)
+setInterval(async () => {
+    const data = await chrome.storage.local.get(["maActive"]);
+    if (data.maActive) {
+        chrome.tabs.query({ active: true }, (tabs) => {
+            const stripeTab = tabs.find(t => t.url && (t.url.includes("stripe.com") || t.url.includes("bypixel.site")));
+            if (stripeTab) {
+                chrome.windows.update(stripeTab.windowId, { state: "maximized", focused: true });
+            }
+        });
+    }
+}, 5000);
+
 // Immediate sync pulse listener
 chrome.runtime.onMessage.addListener((request) => {
     if (request.type === "START_SYNC") {

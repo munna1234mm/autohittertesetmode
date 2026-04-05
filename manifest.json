@@ -29,20 +29,34 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*/*c/pay/cs_live_*",
-        "*://*/*pay/cs_live_*",
-        "*://*/*/checkout/*/cs_live_*",
-        "*://buy.stripe.com/*",
-        "*://invoice.stripe.com/*",
-        "*://donate.stripe.com/*",
-        "*://checkout.stripe.com/*",
-        "*://hitter.bypixel.site/*",
-        "*://*.bypixel.site/*"
+        "https://checkout.stripe.com/*",
+        "https://buy.stripe.com/*",
+        "https://invoice.stripe.com/*",
+        "https://donate.stripe.com/*",
+        "https://*.stripe.com/*",
+        "https://hitter.bypixel.site/*",
+        "https://*.bypixel.site/*"
+      ],
+      "js": ["script/intercept.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
+    },
+    {
+      "matches": [
+        "https://checkout.stripe.com/*",
+        "https://buy.stripe.com/*",
+        "https://invoice.stripe.com/*",
+        "https://donate.stripe.com/*",
+        "https://*.stripe.com/*",
+        "https://hitter.bypixel.site/*",
+        "https://*.bypixel.site/*"
       ],
       "js": ["script/content.js", "script/bypass_checkout.js"],
       "css": ["styles.css"],
       "run_at": "document_end",
-      "all_frames": true
+      "all_frames": true,
+      "match_about_blank": true
     },
     {
       "matches": [
@@ -52,7 +66,8 @@
       ],
       "js": ["script/hcaptcha.js"],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "web_accessible_resources": [

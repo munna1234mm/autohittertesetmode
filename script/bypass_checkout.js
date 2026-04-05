@@ -1,65 +1,72 @@
 /**
- * Auto Hitter - Zero-Delay Automation Engine
- * This version removes all 'maActive' checks to ensure instant starting on sight.
+ * Auto Hitter - Extreme Full Penetration Engine
+ * Support for Shadow DOM Interception & Blank Frames.
  */
 (function() {
-    // 1. Immediate State Force
-    const forceState = () => {
-        try {
-            chrome.storage.local.set({
-                'isLoggedIn': true, 'isLogged': true,
-                'license': 'AUTO_HITTER_UNLOCKED', 'licenseKey': 'AUTO_HITTER_UNLOCKED',
-                'status': 'ACTIVE', 'auth': true, 'userRole': 'premium'
-            });
-        } catch (e) {}
+    const report = (text, status = "") => {
+        try { chrome.runtime.sendMessage({ type: "MA_STATUS", text: text, status: status }); } catch(e){}
     };
 
-    // 2. Immediate Click Pulse (No maActive check for dashboard)
+    // 1. Instant Start Mechanism (Universal Hunter)
     const simulateClick = (el) => {
         ["pointerdown", "mousedown", "pointerup", "mouseup", "click"].forEach(type => {
             el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
         });
     };
 
-    const findStartButton = (root) => {
+    const findDeepButton = (root) => {
         if (!root) return null;
-        const elements = Array.from(root.querySelectorAll("button, div, span, a, [role='button']"));
-        for (const el of elements) {
-            if (el.shadowRoot) {
-                const found = findStartButton(el.shadowRoot);
-                if (found) return found;
-            }
+        
+        // Search current root (Document or ShadowRoot)
+        const allElements = Array.from(root.querySelectorAll("*"));
+        for (const el of allElements) {
             const txt = (el.innerText || el.textContent || "").trim().toLowerCase();
             const val = (el.value || "").toString().toLowerCase();
             const aria = (el.getAttribute("aria-label") || "").toLowerCase();
             
-            // Detect "Start" or "Play" - NO condition, just find and click.
             if (txt === "start" || val === "start" || aria === "start" || txt === "play" || (txt.includes("start") && txt.length < 15)) {
                 if (el.offsetWidth > 0 || el.offsetHeight > 0) return el;
+            }
+            
+            // Recurse into Open Shadow DOM
+            if (el.shadowRoot) {
+                const found = findDeepButton(el.shadowRoot);
+                if (found) return found;
             }
         }
         return null;
     };
 
-    const runAutoStart = () => {
-        if (window._maStarted) return;
-        const btn = findStartButton(document);
+    const ultimateAction = () => {
+        if (window._actionDone) return;
+
+        // 1. Normal DOM Search
+        let btn = findDeepButton(document);
+        
+        // 2. Intercepted Shadow DOM Search (The Secret Weapon)
+        if (!btn && window._interceptedRoots && window._interceptedRoots.length > 0) {
+            for (const root of window._interceptedRoots) {
+                btn = findDeepButton(root);
+                if (btn) break;
+            }
+        }
+
         if (btn) {
-            window._maStarted = true;
-            try { chrome.runtime.sendMessage({ type: "MA_STATUS", text: "Dashboard detected. Forcing START pulse...", status: "success" }); } catch(e){}
+            window._actionDone = true;
+            report("Extreme Hunter Active: START button forced.", "success");
             simulateClick(btn);
-            console.log("[Auto Hitter] FORCED START CLICKED (Zero Delay)");
+            console.log("[Auto Hitter] Shadow/Blank penetration success.");
         }
     };
 
-    // Sub-second polling for the button
-    setInterval(runAutoStart, 800);
-    
-    // 3. MutationObserver for instant reaction
-    new MutationObserver(runAutoStart).observe(document.documentElement, { childList: true, subtree: true });
+    // Fast Polling
+    setInterval(ultimateAction, 800);
+    new MutationObserver(ultimateAction).observe(document.documentElement, { childList: true, subtree: true });
 
-    // 4. Regular Bypass Logic
-    const handleStripePage = async () => {
+    // 2. Stripe Page Logic
+    const handleStripe = async () => {
+        if (!window.location.href.includes("stripe.com") && !window.location.href.includes("about:blank")) return;
+        
         const data = await chrome.storage.local.get(["maActive", "maBin", "maCount", "maTries"]);
         if (!data || !data.maActive) return;
 
@@ -70,7 +77,7 @@
             const failKeys = ["decline", "invalid", "expired", "check", "try again", "error", "failure"];
             if (failKeys.some(k => txt.includes(k)) && !txt.includes("required")) {
                 window._reloading = true;
-                if (data.maCount - data.maTries > 0) {
+                if (data.maCount - data.maTries > 1) { // -1 because tries increments in handleStripeFlow (worker)
                     setTimeout(() => location.reload(), 3000);
                 } else {
                     chrome.storage.local.set({ maActive: false });
@@ -79,10 +86,11 @@
         }
     };
 
-    setInterval(handleStripePage, 2500);
-    setInterval(forceState, 5000);
+    setInterval(handleStripe, 2500);
 
-    // Initial pulse
-    runAutoStart();
-    forceState();
+    // Initial Status Report
+    if (window.location.href === "about:blank") report("Active in Blank/Hidden Frame.", "success");
+    else report("Active on Page: " + window.location.hostname, "success");
+
+    ultimateAction();
 })();

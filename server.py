@@ -27,7 +27,8 @@ current_session = {
     "url": "",
     "bin": "",
     "count": 0,
-    "tries": 0,`n        "session_id": 0,
+    "tries": 0,
+    "session_id": 0,
     "status_logs": []
 }
 
@@ -40,7 +41,8 @@ def start_session():
         "url": data.get("url", ""),
         "bin": data.get("bin", ""),
         "count": int(data.get("count", 0)),
-        "tries": 0,`n        "session_id": 0,
+        "tries": 0,
+        "session_id": int(time.time()),
         "status_logs": [{"text": "Session started via Python API", "status": "success"}]
     }
     return jsonify({"message": "Session started", "session": current_session})

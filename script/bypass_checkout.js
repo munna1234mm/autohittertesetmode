@@ -1,13 +1,9 @@
 /**
- * Auto Hitter - Ultimate Pro Bypass & Instant Start
- * Fixed for PixelAutohit / hitter.bypixel.site compatibility.
+ * Auto Hitter - Zero-Delay Automation Engine
+ * This version removes all 'maActive' checks to ensure instant starting on sight.
  */
 (function() {
-    const report = (text, status = "") => {
-        try { chrome.runtime.sendMessage({ type: "MA_STATUS", text: text, status: status }); } catch(e){}
-    };
-
-    // 1. Instant Active State
+    // 1. Immediate State Force
     const forceState = () => {
         try {
             chrome.storage.local.set({
@@ -18,7 +14,7 @@
         } catch (e) {}
     };
 
-    // 2. High-Performance Clicker (MutationObserver for Instant Detection)
+    // 2. Immediate Click Pulse (No maActive check for dashboard)
     const simulateClick = (el) => {
         ["pointerdown", "mousedown", "pointerup", "mouseup", "click"].forEach(type => {
             el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
@@ -26,7 +22,8 @@
     };
 
     const findStartButton = (root) => {
-        const elements = Array.from(root.querySelectorAll("*"));
+        if (!root) return null;
+        const elements = Array.from(root.querySelectorAll("button, div, span, a, [role='button']"));
         for (const el of elements) {
             if (el.shadowRoot) {
                 const found = findStartButton(el.shadowRoot);
@@ -36,6 +33,7 @@
             const val = (el.value || "").toString().toLowerCase();
             const aria = (el.getAttribute("aria-label") || "").toLowerCase();
             
+            // Detect "Start" or "Play" - NO condition, just find and click.
             if (txt === "start" || val === "start" || aria === "start" || txt === "play" || (txt.includes("start") && txt.length < 15)) {
                 if (el.offsetWidth > 0 || el.offsetHeight > 0) return el;
             }
@@ -43,77 +41,48 @@
         return null;
     };
 
-    const attemptInstantStart = () => {
+    const runAutoStart = () => {
         if (window._maStarted) return;
         const btn = findStartButton(document);
         if (btn) {
             window._maStarted = true;
-            report("Target Detected. Initiating Instant Start...", "success");
+            try { chrome.runtime.sendMessage({ type: "MA_STATUS", text: "Dashboard detected. Forcing START pulse...", status: "success" }); } catch(e){}
             simulateClick(btn);
-            console.log("[Auto Hitter] Dashboard START clicked.");
+            console.log("[Auto Hitter] FORCED START CLICKED (Zero Delay)");
         }
     };
 
-    // 3. MutationObserver for Sub-Second Reation
-    const observer = new MutationObserver(() => {
-        attemptInstantStart();
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    // Sub-second polling for the button
+    setInterval(runAutoStart, 800);
+    
+    // 3. MutationObserver for instant reaction
+    new MutationObserver(runAutoStart).observe(document.documentElement, { childList: true, subtree: true });
 
-    // 4. Initial and Background Intervals
-    setInterval(attemptInstantStart, 1000);
-    setInterval(forceState, 5000);
-
-    // 5. Stripe Page Logic (Filling & Monitoring)
-    const handleStripeFlow = async () => {
-        const data = await chrome.storage.local.get(["maActive", "maBin", "maCount", "maTries", "maUrl"]);
+    // 4. Regular Bypass Logic
+    const handleStripePage = async () => {
+        const data = await chrome.storage.local.get(["maActive", "maBin", "maCount", "maTries"]);
         if (!data || !data.maActive) return;
 
-        if (window.location.href.includes("stripe.com")) {
-            report("Stripe Flow Monitoring Active.", "success");
-            
-            // Auto-Fill Trigger
-            chrome.storage.local.set({ 
-                "quickBin": data.maBin, 
-                "maTries": data.maTries + 1,
-                "currentBin": data.maBin 
-            });
+        // Force reload/retry logic if failure detected
+        const err = document.querySelector(".FieldError, .Error, [role='alert'], .messaging-message, .p-Icon--error");
+        if (err && err.offsetParent !== null && !window._reloading) {
+            const txt = err.innerText.toLowerCase();
+            const failKeys = ["decline", "invalid", "expired", "check", "try again", "error", "failure"];
+            if (failKeys.some(k => txt.includes(k)) && !txt.includes("required")) {
+                window._reloading = true;
+                if (data.maCount - data.maTries > 0) {
+                    setTimeout(() => location.reload(), 3000);
+                } else {
+                    chrome.storage.local.set({ maActive: false });
+                }
+            }
         }
     };
 
-    const monitorOutcome = () => {
-        setInterval(async () => {
-            const data = await chrome.storage.local.get(["maActive", "maTries", "maCount"]);
-            if (!data.maActive) return;
+    setInterval(handleStripePage, 2500);
+    setInterval(forceState, 5000);
 
-            const err = document.querySelector(".FieldError, .Error, [role='alert'], .messaging-message, .p-Icon--error");
-            if (err && err.offsetParent !== null) {
-                const txt = err.innerText.toLowerCase();
-                const failKeys = ["decline", "invalid", "expired", "check", "try again", "error", "failure"];
-                if (failKeys.some(k => txt.includes(k)) && !txt.includes("required") && !window._reloading) {
-                    window._reloading = true;
-                    if (data.maCount - data.maTries > 0) {
-                        report("Failure detected. Auto-reloading for next hit...", "error");
-                        setTimeout(() => location.reload(), 3000);
-                    } else {
-                        chrome.storage.local.set({ maActive: false });
-                        report("Max retries finished.", "error");
-                    }
-                }
-            }
-
-            if (window.location.href.includes("success") || window.location.href.includes("thanks")) {
-                chrome.storage.local.set({ maActive: false });
-                report("Success Detected! Session cleared.", "success");
-            }
-        }, 3000);
-    };
-
-    // Initialize
-    if (window.location.href.includes("bypixel.site")) report("Extension Active in Dashboard Frame!", "success");
-    else report("Extension Active on page: " + window.location.hostname, "success");
-
+    // Initial pulse
+    runAutoStart();
     forceState();
-    handleStripeFlow();
-    monitorOutcome();
 })();

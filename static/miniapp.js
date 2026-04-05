@@ -38,24 +38,16 @@
             });
             const data = await resp.json();
             
-            addLog('Session synced with Python API.', 'success');
+            addLog('Session synced with Cloud Extension.', 'success');
             startBtn.textContent = 'SESSION ACTIVE';
             startBtn.disabled = true;
             statusDot.style.display = 'block';
 
-            // Also keep local copy for immediate content script access
-            chrome.storage.local.set({
-                'maActive': true,
-                'maUrl': url,
-                'maBin': bin,
-                'maCount': parseInt(tries),
-                'maTries': 0
-            }, () => {
-                chrome.tabs.create({ url: url, active: true });
-            });
+            // The Extension's Background Bridge Worker will detect this 
+            // and open the tab automatically in the user's browser.
             
         } catch (err) {
-            addLog('Python Server not running! Check localhost:5000', 'error');
+            addLog('Cloud Server connection failed. Retrying...', 'error');
         }
     });
 

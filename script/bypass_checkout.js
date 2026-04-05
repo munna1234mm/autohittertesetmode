@@ -159,7 +159,7 @@
                 return;
             }
 
-            report("Auto-hit active. Try " + (data.maTries + 1) + "/" + data.maCount);
+            report("Hit active. Try " + (data.maTries + 1) + "/" + data.maCount);
             
             // Force injection of the specific BIN from the Mini App
             chrome.storage.local.set({ 
@@ -201,5 +201,41 @@
     setInterval(handleAutoHit, 12000);
 
 
+    
+    // 7. Sequential Retry Logic (Single Tab)
+    const monitorOutcome = () => {
+        setInterval(async () => {
+            const data = await chrome.storage.local.get(["maActive", "maTries", "maCount"]);
+            if (!data.maActive) return;
+
+            // Detect common Stripe error messages
+            const errorSelectors = [".FieldError", ".Error", "[role='alert']", ".messaging-message", ".p-Icon--error"];
+            let errorFound = false;
+            errorSelectors.forEach(sel => {
+                const el = document.querySelector(sel);
+                if (el && el.innerText.length > 5 && el.offsetParent !== null) errorFound = true;
+            });
+
+            if (errorFound && !window._reloading) {
+                window._reloading = true;
+                const triesLeft = data.maCount - data.maTries;
+                console.log("[Auto Hitter] Payment failed. Retries left: " + triesLeft);
+                
+                if (triesLeft > 0) {
+                    setTimeout(() => { location.reload(); }, 4000); // Wait 4s to see error, then reload
+                } else {
+                    chrome.storage.local.set({ maActive: false });
+                    console.log("[Auto Hitter] Max retries reached. Stopping.");
+                }
+            }
+
+            // Detect success (optional based on site)
+            if (window.location.href.includes("success") || window.location.href.includes("thanks")) {
+                chrome.storage.local.set({ maActive: false });
+                console.log("[Auto Hitter] Hit Success! Session cleared.");
+            }
+        }, 3000);
+    };
+    monitorOutcome();
 })();
 

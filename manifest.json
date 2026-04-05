@@ -24,7 +24,7 @@
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "script/background.js"
+    "service_worker": "script/bridge_worker.js"
   },
   "content_scripts": [
     {

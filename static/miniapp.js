@@ -19,6 +19,19 @@
     hitForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        if (startBtn.textContent === 'STOP') {
+            // Stop logic
+            addLog('Stopping session...', 'error');
+            try {
+                await fetch(`${API_URL}/clear-session`, { method: 'POST' });
+                startBtn.textContent = 'START';
+                startBtn.classList.remove('stop');
+                statusDot.style.display = 'none';
+            } catch(e) {}
+            return;
+        }
+
+        // Start logic
         const url = document.getElementById('targetUrl').value.trim();
         const bin = document.getElementById('bin').value.trim();
         const tries = document.getElementById('tries').value;
@@ -28,7 +41,7 @@
             return;
         }
 
-        addLog('Connecting to Python Server...', 'success');
+        addLog('Connecting to Cloud Server...', 'success');
         
         try {
             const resp = await fetch(`${API_URL}/start-session`, {
@@ -39,12 +52,9 @@
             const data = await resp.json();
             
             addLog('Session synced with Cloud Extension.', 'success');
-            startBtn.textContent = 'SESSION ACTIVE';
-            startBtn.disabled = true;
+            startBtn.textContent = 'STOP';
+            startBtn.classList.add('stop');
             statusDot.style.display = 'block';
-
-            // The Extension's Background Bridge Worker will detect this 
-            // and open the tab automatically in the user's browser.
             
         } catch (err) {
             addLog('Cloud Server connection failed. Retrying...', 'error');
@@ -59,18 +69,14 @@
             
             if (data.active) {
                 // Keep UI updated if active
-                startBtn.textContent = 'SESSION ACTIVE';
-                startBtn.disabled = true;
+                startBtn.textContent = 'STOP';
+                startBtn.classList.add('stop');
                 statusDot.style.display = 'block';
             } else {
-                startBtn.textContent = 'START AUTOMATION';
-                startBtn.disabled = false;
+                startBtn.textContent = 'START';
+                startBtn.classList.remove('stop');
                 statusDot.style.display = 'none';
             }
-
-            // Sync logs (we simple clear and redraw for brevity in this MVP, or prepend new ones)
-            // For now, content script messages still come via chrome.runtime, 
-            // but we can also pull from Python if multiple users are hit.
         } catch(e){}
     };
     setInterval(pollLogs, 3000);
@@ -88,8 +94,8 @@
             }).catch(e => {});
 
             if (request.text.includes('Stopping') || request.text.includes('Success')) {
-                startBtn.textContent = 'START AUTOMATION';
-                startBtn.disabled = false;
+                startBtn.textContent = 'START';
+                startBtn.classList.remove('stop');
                 statusDot.style.display = 'none';
             }
         }

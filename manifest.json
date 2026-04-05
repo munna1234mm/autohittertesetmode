@@ -20,7 +20,7 @@
     "webRequestAuthProvider",
     "browsingData"
   ],
-  "host_permissions": [
+  "host_permissions": [ "https://autohittertesetmode.onrender.com/*",
     "<all_urls>"
   ],
   "background": {

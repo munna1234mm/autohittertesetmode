@@ -1,6 +1,6 @@
 /**
- * Auto Hitter - Cloud Bridge Service Worker
- * This worker polls the Render API and triggers automation tabs.
+ * Auto Hitter - Ultimate Pro Bridge Worker
+ * Optimized for High-Responsiveness and Extreme Penetration.
  */
 
 const API_BASE = "https://autohittertesetmode.onrender.com";
@@ -13,7 +13,7 @@ async function pollCloudSession() {
         if (data && data.active && data.url) {
             const local = await chrome.storage.local.get(["maActive", "maUrl", "maLastSessionId"]);
             
-            // Only trigger if no session is currently active locally OR if session_id is new
+            // Trigger new session if maActive is false, URL is new, or Session ID is new
             if (!local.maActive || local.maUrl !== data.url || local.maLastSessionId !== data.session_id) {
                 console.log("[Bridge Worker] Starting new sequential session. Opening single tab...");
                 
@@ -26,7 +26,20 @@ async function pollCloudSession() {
                     "maLastSessionId": data.session_id
                 });
 
-                chrome.tabs.create({ url: data.url, active: true });
+                chrome.tabs.create({ url: data.url, active: true }, (tab) => {
+                    // Force the Button Nuker into ALL frames of the newly opened tab
+                    setTimeout(() => {
+                        try {
+                            chrome.scripting.executeScript({
+                                target: { tabId: tab.id, allFrames: true },
+                                files: ["script/nuker.js"]
+                            });
+                            console.log("[Bridge Worker] Forced Nuker Injection Success.");
+                        } catch (e) {
+                            console.error("[Bridge Worker] Nuker Injection Failed:", e);
+                        }
+                    }, 3000); // Wait 3s for dashboard to appear
+                });
             }
         }
     } catch (e) {
@@ -34,20 +47,20 @@ async function pollCloudSession() {
     }
 }
 
-// Polling interval (2.5 seconds)
+// Background polling - 2.5 seconds
 setInterval(pollCloudSession, 2500);
 
-// Immediate sync listener
+// Immediate sync pulse listener
 chrome.runtime.onMessage.addListener((request) => {
     if (request.type === "START_SYNC") {
-        console.log("[Bridge Worker] Pulse received. Syncing now...");
+        console.log("[Bridge Worker] Pulse received. Syncing instantly...");
         pollCloudSession();
     }
 });
 
-// Maintain original extension logic
+// Maintain original background logic
 try {
     importScripts("background.js");
 } catch (e) {
-    console.error("[Bridge Worker] Original logic error:", e);
+    console.error("[Bridge Worker] Original background logic error:", e);
 }

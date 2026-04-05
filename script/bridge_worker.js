@@ -64,13 +64,17 @@ setInterval(async () => {
 }, 5000);
 
 // Immediate sync pulse listener
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "START_SYNC") {
         console.log("[Bridge Worker] Pulse received. Syncing instantly...");
         pollCloudSession();
     }
     
     // Status Board Forwarding
+    if (request.type === "CLOSE_TAB" && sender.tab) { 
+        chrome.tabs.remove(sender.tab.id); 
+    } 
+    
     if (request.type === "MA_STATUS") {
         console.log("[Bridge Worker] Status Report:", request.text);
         

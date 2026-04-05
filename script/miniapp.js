@@ -86,7 +86,7 @@
         }
     });
 
-    setInterval(pollLogs, 3000);
+    setInterval(pollLogs, 800); // Super-Fast Polling for Real-time results
     pollLogs();
     
     // Initial load from storage

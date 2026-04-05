@@ -93,7 +93,7 @@
                 const msg = "Hit SUCCESS! Order page detected. Stopping.";
                 report(msg, "success");
                 showOnPageLog(msg, "success");
-                chrome.storage.local.set({ maActive: false });
+                chrome.storage.local.set({ maActive: false }); setTimeout(() => { chrome.runtime.sendMessage({ type: "CLOSE_TAB" }); }, 1500);
             }
             return;
         }
@@ -125,7 +125,7 @@
                         const fMsg = "Finished all " + data.maCount + " tries.";
                         report(fMsg, "error");
                         showOnPageLog(fMsg, "error");
-                        chrome.storage.local.set({ maActive: false });
+                        chrome.storage.local.set({ maActive: false }); setTimeout(() => { chrome.runtime.sendMessage({ type: "CLOSE_TAB" }); }, 1500);
                     }
                 }
                 return;

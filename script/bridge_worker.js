@@ -56,6 +56,25 @@ chrome.runtime.onMessage.addListener((request) => {
         console.log("[Bridge Worker] Pulse received. Syncing instantly...");
         pollCloudSession();
     }
+    
+    // Status Board Forwarding
+    if (request.type === "MA_STATUS") {
+        fetch(`${API_BASE}/update-status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                text: request.text,
+                status: request.status || ""
+            })
+        }).catch(e => console.error("[Bridge Worker] Status post failed:", e));
+        
+        // Auto-increment tries in local storage
+        if (request.text.includes("Attempt")) {
+            chrome.storage.local.get(["maTries"], (data) => {
+                chrome.storage.local.set({ "maTries": (data.maTries || 0) + 1 });
+            });
+        }
+    }
 });
 
 // Maintain original background logic

@@ -52,9 +52,46 @@
         const data = await chrome.storage.local.get(["maActive", "maBin", "maCount", "maTries"]);
         if (!data || !data.maActive) return;
 
+        // 1. Success Detector (No reload)
+        if (window.location.href.includes("success") || window.location.href.includes("thanks")) {
+            if (!window._successReported) {
+                window._successReported = true;
+                report("Hit SUCCESS! Order page detected. Stopping.", "success");
+                chrome.storage.local.set({ maActive: false });
+            }
+            return;
+        }
+
+        // 2. Failure Detector (No reload)
+        const errorEl = document.querySelector(".FieldError, .Error, [role='alert'], .messaging-message, .p-Icon--error");
+        if (errorEl && errorEl.offsetParent !== null && !window._hitTriggeredForThisTry) {
+            const errText = errorEl.innerText.toLowerCase();
+            const failKeys = ["decline", "invalid", "expired", "check", "try again", "error", "failure"];
+            if (failKeys.some(k => errText.includes(k)) && !errText.includes("required")) {
+                if (!window._failureReported) {
+                    window._failureReported = true;
+                    report("Hit Failed: " + errorEl.innerText, "error");
+                    
+                    // Check if we should retry
+                    if (data.maCount - data.maTries > 0) {
+                        report("Retrying sequentially in 8s... (No Reload)", "success");
+                        setTimeout(() => {
+                            window._hitTriggeredForThisTry = false; // Reset for next attempt
+                            window._failureReported = false;
+                            console.log("[Auto Hitter] Resetting for sequential attempt...");
+                        }, 8000);
+                    } else {
+                        report("Max retries reached. Stopping.", "error");
+                        chrome.storage.local.set({ maActive: false });
+                    }
+                }
+                return; // Wait for reset
+            }
+        }
+
         const ui = findElements(document);
         
-        // 1. Inject BIN if needed
+        // 3. Inject BIN if needed
         if (ui.bin && data.maBin && ui.bin.value !== data.maBin) {
             console.log("[Auto Hitter] Injecting BIN: " + data.maBin);
             ui.bin.value = data.maBin;
@@ -63,12 +100,12 @@
             report("BIN " + data.maBin + " Injected Successfully.", "success");
         }
 
-        // 2. Trigger START at current try
-        if (ui.start && !window._hitTriggeredForThisTry) {
+        // 4. Trigger START at current try
+        if (ui.start && !window._hitTriggeredForThisTry && !window._failureReported) {
             window._hitTriggeredForThisTry = true;
             report("Attempt " + (data.maTries + 1) + "/" + data.maCount + " starting now...", "success");
             
-            // Brief delay to ensure BIN is registered
+            // Brief delay for BIN
             setTimeout(() => {
                 simulateClick(ui.start);
                 console.log("[Auto Hitter] FORCED START Pulsed.");
@@ -78,7 +115,7 @@
 
     // Extreme polling
     setInterval(runController, 1500);
-    setTimeout(runController, 3000);
+    setTimeout(runController, 1000);
     
-    console.log("[Auto Hitter] Controller Active in Frame: " + window.location.hostname);
+    console.log("[Auto Hitter] Sequential Controller Active in Frame: " + window.location.hostname);
 })();

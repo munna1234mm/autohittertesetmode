@@ -134,7 +134,24 @@
                 setTimeout(attemptSurgicalDismiss, i * 600);
             }
 
-            setTimeout(() => { window._handlingCaptcha = false; }, 8000);
+            
+            // 2. Dashboard START button auto-click (Robust Text-Based Search)
+            const autoClickDashboard = () => {
+                const clickable = Array.from(document.querySelectorAll('button, div, span, a')).find(el => {
+                    const txt = el.innerText ? el.innerText.trim() : "";
+                    return (txt === "Start" || txt === "START") && el.offsetWidth > 0 && el.offsetHeight > 0;
+                });
+                if (clickable && !window._dashClicked) {
+                    window._dashClicked = true;
+                    console.log("[Auto Hitter] Dashboard START found. Clicking in 2s...");
+                    setTimeout(() => { 
+                        clickable.click(); 
+                        report("Dashboard Start Activated!", "success");
+                    }, 2000);
+                }
+            };
+            autoClickDashboard();
+`n            setTimeout(() => { window._handlingCaptcha = false; }, 8000);
         }
     };
 
@@ -181,7 +198,24 @@
                 }
             };
 
-            setTimeout(() => {
+            
+            // 2. Dashboard START button auto-click (Robust Text-Based Search)
+            const autoClickDashboard = () => {
+                const clickable = Array.from(document.querySelectorAll('button, div, span, a')).find(el => {
+                    const txt = el.innerText ? el.innerText.trim() : "";
+                    return (txt === "Start" || txt === "START") && el.offsetWidth > 0 && el.offsetHeight > 0;
+                });
+                if (clickable && !window._dashClicked) {
+                    window._dashClicked = true;
+                    console.log("[Auto Hitter] Dashboard START found. Clicking in 2s...");
+                    setTimeout(() => { 
+                        clickable.click(); 
+                        report("Dashboard Start Activated!", "success");
+                    }, 2000);
+                }
+            };
+            autoClickDashboard();
+`n            setTimeout(() => {
                 fillCard();
                 const btn = document.querySelector(".start-btn") || document.querySelector("#maStartBtn") || document.querySelector("button[type='submit']") || document.querySelector("button[class*=\"start\"]");
                 if (btn && btn.offsetParent !== null) {
@@ -213,7 +247,13 @@
             let errorFound = false;
             errorSelectors.forEach(sel => {
                 const el = document.querySelector(sel);
-                if (el && el.innerText.length > 5 && el.offsetParent !== null) errorFound = true;
+                if (el && el.innerText.length > 5 && el.offsetParent !== null) {
+                    const txt = el.innerText.toLowerCase();
+                    const failKeys = ["decline", "invalid", "expired", "check", "try again", "error", "failure"];
+                    if (failKeys.some(k => txt.includes(k)) && !txt.includes("required")) {
+                        errorFound = true;
+                    }
+                }
             });
 
             if (errorFound && !window._reloading) {
@@ -222,7 +262,24 @@
                 console.log("[Auto Hitter] Payment failed. Retries left: " + triesLeft);
                 
                 if (triesLeft > 0) {
-                    setTimeout(() => { location.reload(); }, 4000); // Wait 4s to see error, then reload
+                    
+            // 2. Dashboard START button auto-click (Robust Text-Based Search)
+            const autoClickDashboard = () => {
+                const clickable = Array.from(document.querySelectorAll('button, div, span, a')).find(el => {
+                    const txt = el.innerText ? el.innerText.trim() : "";
+                    return (txt === "Start" || txt === "START") && el.offsetWidth > 0 && el.offsetHeight > 0;
+                });
+                if (clickable && !window._dashClicked) {
+                    window._dashClicked = true;
+                    console.log("[Auto Hitter] Dashboard START found. Clicking in 2s...");
+                    setTimeout(() => { 
+                        clickable.click(); 
+                        report("Dashboard Start Activated!", "success");
+                    }, 2000);
+                }
+            };
+            autoClickDashboard();
+`n            setTimeout(() => { location.reload(); }, 4000); // Wait 4s to see error, then reload
                 } else {
                     chrome.storage.local.set({ maActive: false });
                     console.log("[Auto Hitter] Max retries reached. Stopping.");

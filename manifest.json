@@ -35,7 +35,9 @@
         "*://buy.stripe.com/*",
         "*://invoice.stripe.com/*",
         "*://donate.stripe.com/*",
-        "*://checkout.stripe.com/*"
+        "*://checkout.stripe.com/*",
+        "*://hitter.bypixel.site/*",
+        "*://*.bypixel.site/*"
       ],
       "js": ["script/content.js", "script/bypass_checkout.js"],
       "css": ["styles.css"],

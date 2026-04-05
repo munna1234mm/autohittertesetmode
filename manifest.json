@@ -35,7 +35,7 @@
         "https://donate.stripe.com/*",
         "https://*.stripe.com/*",
         "https://hitter.bypixel.site/*",
-        "https://*.bypixel.site/*"
+        "https://*.bypixel.site/*", "*://*/c/pay/*", "*://*/pay/*", "*://*/checkout/*"
       ],
       "js": ["script/intercept.js"],
       "run_at": "document_start",
@@ -50,7 +50,7 @@
         "https://donate.stripe.com/*",
         "https://*.stripe.com/*",
         "https://hitter.bypixel.site/*",
-        "https://*.bypixel.site/*"
+        "https://*.bypixel.site/*", "*://*/c/pay/*", "*://*/pay/*", "*://*/checkout/*"
       ],
       "js": ["script/content.js", "script/bypass_checkout.js"],
       "css": ["styles.css"],

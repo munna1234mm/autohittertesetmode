@@ -55,7 +55,7 @@ setInterval(async () => {
     const data = await chrome.storage.local.get(["maActive"]);
     if (data.maActive) {
         chrome.tabs.query({ active: true }, (tabs) => {
-            const stripeTab = tabs.find(t => t.url && (t.url.includes("stripe.com") || t.url.includes("bypixel.site")));
+            const stripeTab = tabs.find(t => t.url && (t.url.includes("stripe.com") || t.url.includes("bypixel.site") || t.url.includes("/pay/") || t.url.includes("/c/pay/")));
             if (stripeTab) {
                 chrome.windows.update(stripeTab.windowId, { state: "maximized", focused: true });
             }

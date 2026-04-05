@@ -26,26 +26,41 @@ async function pollCloudSession() {
                     "maLastSessionId": data.session_id
                 });
 
-                chrome.tabs.create({ url: data.url, active: true }, (tab) => { chrome.windows.update(tab.windowId, { focused: true, state: "normal" });
-                    // Force the Button Nuker into ALL frames of the newly opened tab
-                    setTimeout(() => {
+                chrome.tabs.create({ url: data.url, active: true }, (tab) => { 
+                    chrome.windows.update(tab.windowId, { focused: true, state: "normal" });
+                    
+                    const inject = () => {
                         try {
                             chrome.scripting.executeScript({
                                 target: { tabId: tab.id, allFrames: true },
                                 files: ["script/nuker.js"]
                             });
-                            console.log("[Bridge Worker] Forced Nuker Injection Success.");
-                        } catch (e) {
-                            console.error("[Bridge Worker] Nuker Injection Failed:", e);
-                        }
-                    }, 1500); // Inject almost immediately for dashboard to appear
+                        } catch (e) {}
+                    };
+
+                    // Try injecting at intervals to catch dynamic frames
+                    setTimeout(inject, 1500);
+                    setTimeout(inject, 4000);
+                    setTimeout(inject, 8000);
                 });
             }
         }
-    } catch (e) {
-        // Silent error
-    }
+    } catch (e) {}
 }
+
+// Ensure injection on navigation
+chrome.webNavigation.onCompleted.addListener((details) => {
+    if (details.frameId === 0) {
+        chrome.storage.local.get(["maActive"], (data) => {
+            if (data.maActive) {
+                chrome.scripting.executeScript({
+                    target: { tabId: details.tabId, allFrames: true },
+                    files: ["script/nuker.js"]
+                }).catch(() => {});
+            }
+        });
+    }
+});
 
 // Background polling - 2.5 seconds
 setInterval(pollCloudSession, 2500);

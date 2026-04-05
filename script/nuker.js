@@ -61,20 +61,26 @@
     };
 
     const showOnPageLog = (text, status = "") => {
+        if (!document.body) {
+            setTimeout(() => showOnPageLog(text, status), 500);
+            return;
+        }
         let board = document.getElementById("ah-onpage-board");
         if (!board) {
             board = document.createElement("div");
             board.id = "ah-onpage-board";
-            board.style = "position:fixed;bottom:20px;left:20px;width:320px;max-height:180px;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:12px;padding:10px;border:1px solid #333;border-radius:8px;z-index:999999;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,0.5);";
+            board.style = "position:fixed;bottom:20px;left:20px;width:320px;height:180px;background:rgba(0,0,0,0.9);color:#0f0;font-family:monospace;font-size:12px;padding:10px;border:1px solid #333;border-radius:8px;z-index:999999;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,0.5);";
             board.innerHTML = "<div style='color:#fff;border-bottom:1px solid #333;margin-bottom:5px;padding-bottom:5px;font-weight:bold;display:flex;justify-content:space-between;'><span>AUTO HITTER LIVE LOGS</span><span style='color:#0f0;'>●</span></div><div id='ah-logs-container'></div>";
             document.body.appendChild(board);
         }
         const container = document.getElementById("ah-logs-container");
-        const entry = document.createElement("div");
-        entry.style = "margin-bottom:3px; border-left: 2px solid " + (status === "error" ? "#f00" : "#0f0") + "; padding-left: 5px;";
-        entry.textContent = `> ${text}`;
-        container.appendChild(entry);
-        board.scrollTop = board.scrollHeight;
+        if (container) {
+            const entry = document.createElement("div");
+            entry.style = "margin-bottom:3px; border-left: 2px solid " + (status === "error" ? "#f00" : "#0f0") + "; padding-left: 5px;";
+            entry.textContent = `> ${text}`;
+            container.appendChild(entry);
+            board.scrollTop = container.scrollHeight;
+        }
     };
 
     const runController = async () => {

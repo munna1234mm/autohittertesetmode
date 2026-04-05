@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -6,7 +6,11 @@ CORS(app)  # Enable CORS for the browser extension
 
 @app.route('/', methods=['GET'])
 def index():
-    return "Auto Hitter Python Server is running! Use miniapp.html to control."
+    return render_template('index.html')
+
+@app.route('/api-status', methods=['GET'])
+def api_status():
+    return "Auto Hitter Python Server is running!"
 
 # In-memory storage for the current auto-hit session
 current_session = {

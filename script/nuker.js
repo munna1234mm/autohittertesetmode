@@ -128,10 +128,11 @@
                             window._failureReported = false;
                         }, 8000);
                     } else {
-                        const fMsg = "Finished all " + data.maCount + " tries.";
+                        const fMsg = "Finished all " + data.maCount + " tries. Closing in 5s...";
                         report(fMsg, "error");
                         showOnPageLog(fMsg, "error");
-                        chrome.storage.local.set({ maActive: false }); setTimeout(() => { chrome.runtime.sendMessage({ type: "CLOSE_TAB" }); }, 1500);
+                        chrome.storage.local.set({ maActive: false }); 
+                        setTimeout(() => { chrome.runtime.sendMessage({ type: "CLOSE_TAB" }); }, 5000);
                     }
                 }
                 return;

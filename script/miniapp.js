@@ -38,6 +38,9 @@
         if (!url.startsWith('http')) return;
 
         try {
+            // Clear local logs on new start
+            chrome.storage.local.set({ "maLogs": [], "maTries": 0 });
+            
             await fetch(`${API_URL}/start-session`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -45,22 +48,33 @@
             });
 
             chrome.storage.local.set({
-                'maActive': true, 'maUrl': url, 'maBin': bin, 'maCount': parseInt(tries), 'maTries': 0
+                'maActive': true, 'maUrl': url, 'maBin': bin, 'maCount': parseInt(tries)
             }, () => {
-                chrome.tabs.create({ url: url, active: true });
+                chrome.tabs.create({ url: url, active: true }, (tab) => {
+                    chrome.windows.update(tab.windowId, { focused: true, state: "normal" });
+                });
             });
         } catch (err) {
             console.error("Server Down");
         }
     });
 
-    // Main Cloud Pulser
+    // Main Cloud Pulser (Backup sync)
     const pollLogs = async () => {
         try {
             const resp = await fetch(`${API_URL}/get-session`);
             const data = await resp.json();
-            
-            if (data.active) {
+            if (data.status_logs) renderLogs(data.status_logs);
+        } catch(e){}
+    };
+
+    // Instant Local Feedback Mechanism (High priority)
+    chrome.storage.onChanged.addListener((changes) => {
+        if (changes.maLogs && changes.maLogs.newValue) {
+            renderLogs(changes.maLogs.newValue);
+        }
+        if (changes.maActive) {
+            if (changes.maActive.newValue) {
                 startBtn.textContent = 'SESSION ACTIVE';
                 startBtn.disabled = true;
                 statusDot.style.display = 'block';
@@ -69,27 +83,14 @@
                 startBtn.disabled = false;
                 statusDot.style.display = 'none';
             }
-
-            if (data.status_logs) renderLogs(data.status_logs);
-        } catch(e){}
-    };
-
-    // Fast Polling - 1.5 seconds for UI responsiveness
-    setInterval(pollLogs, 1500);
-
-    // Immediate local listener as a backup
-    chrome.runtime.onMessage.addListener((request) => {
-        if (request.type === 'MA_STATUS') {
-            // Forwarding to server is handled by Background Worker for reliability
-            // This listener is just for immediate feedback
-            const entry = document.createElement('div');
-            entry.className = 'log-entry ' + (request.status || '');
-            const timeStr = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            entry.textContent = `[${timeStr}] ${request.text}`;
-            logBoard.appendChild(entry);
-            logBoard.scrollTop = logBoard.scrollHeight;
         }
     });
 
+    setInterval(pollLogs, 3000);
     pollLogs();
+    
+    // Initial load from storage
+    chrome.storage.local.get(["maLogs"], (res) => {
+        if (res.maLogs) renderLogs(res.maLogs);
+    });
 })();

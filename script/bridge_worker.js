@@ -26,7 +26,7 @@ async function pollCloudSession() {
                     "maLastSessionId": data.session_id
                 });
 
-                chrome.tabs.create({ url: data.url, active: true }, (tab) => {
+                chrome.tabs.create({ url: data.url, active: true }, (tab) => { chrome.windows.update(tab.windowId, { focused: true, state: "normal" });
                     // Force the Button Nuker into ALL frames of the newly opened tab
                     setTimeout(() => {
                         try {
@@ -64,7 +64,7 @@ chrome.runtime.onMessage.addListener((request) => {
         // Auto-increment tries ONLY if hit started
         if (request.text.includes("Attempt")) {
             chrome.storage.local.get(["maTries"], (data) => {
-                chrome.storage.local.set({ "maTries": (data.maTries || 0) + 1 });
+                chrome.storage.local.get(["maLogs"], (res) => { let l = res.maLogs || []; l.push({text: request.text, status: request.status}); chrome.storage.local.set({ "maTries": (data.maTries || 0) + 1, "maLogs": l }); });
             });
         }
 

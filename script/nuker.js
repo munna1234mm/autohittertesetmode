@@ -48,7 +48,7 @@
             // 3. Detect Result Popups (like "do_not_honor", "success", "insufficient_funds")
             if (txt.includes("_") || txt.includes(" ") || txt.length > 3) {
                 const isFinalResult = ["honor", "fund", "fail", "decline", "success", "thank", "invalid", "error"].some(k => lowerTxt.includes(k));
-                const isTransient = ["process", "load", "wait", "email", "required", "link"].some(k => lowerTxt.includes(k));
+                const isTransient = ["process", "load", "wait", "email", "required", "link", "step", "checkbox", "done", "select", "captcha"].some(k => lowerTxt.includes(k));
                 
                 if (isFinalResult && !isTransient && node.offsetWidth > 0 && node.offsetParent !== null) {
                     const style = window.getComputedStyle(node);
